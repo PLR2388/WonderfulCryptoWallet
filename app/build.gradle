@@ -1,6 +1,9 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.serialization'
+    id 'kotlin-kapt'
+    id 'com.google.dagger.hilt.android'
 }
 
 android {
@@ -57,6 +60,7 @@ dependencies {
     implementation AndroidX.compose.ui.graphics
     implementation AndroidX.compose.ui.toolingPreview
     implementation AndroidX.compose.material3
+    implementation AndroidX.dataStore.core
     testImplementation Testing.junit4
     androidTestImplementation AndroidX.test.ext.junit
     androidTestImplementation AndroidX.test.espresso.core
@@ -64,4 +68,21 @@ dependencies {
     androidTestImplementation AndroidX.compose.ui.testJunit4
     debugImplementation AndroidX.compose.ui.tooling
     debugImplementation AndroidX.compose.ui.testManifest
+    implementation Square.retrofit2
+    implementation KotlinX.serialization.json
+    implementation Google.dagger.hilt.android
+    kapt Google.dagger.hilt.compiler
+    implementation AndroidX.hilt.navigationCompose
+    implementation JakeWharton.retrofit2.converter.kotlinxSerialization
+
+    implementation AndroidX.room.runtime
+    annotationProcessor AndroidX.room.compiler
+
+    // To use Kotlin annotation processing tool (kapt)
+    kapt AndroidX.room.compiler
+}
+
+// Allow references to generated code
+kapt {
+    correctErrorTypes true
 }
