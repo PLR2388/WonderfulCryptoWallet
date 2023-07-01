@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Wonderful Crypto Wallet</string>
+    <string name="add_wallet_title">Add a new wallet</string>
+    <string name="add_wallet_name_label">Name</string>
+    <string name="add_wallet_address_label">Address</string>
+    <string name="add_wallet_button">Add</string>
 </resources>
