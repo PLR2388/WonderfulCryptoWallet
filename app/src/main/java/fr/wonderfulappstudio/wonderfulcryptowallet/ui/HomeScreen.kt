@@ -250,7 +250,7 @@ fun WalletRow(wallet: Wallet) {
                 )
             }
             Spacer(modifier = Modifier.weight(1f))
-            Text(text = "$%f".format(wallet.balance * wallet.crypto.currentPrice))
+            Text(text = "$%.2f".format(wallet.balance * wallet.crypto.currentPrice))
         }
     }
 }

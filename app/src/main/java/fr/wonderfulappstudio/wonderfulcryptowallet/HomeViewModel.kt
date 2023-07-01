@@ -42,7 +42,26 @@ class HomeViewModel @Inject constructor(
         uiState = HomeUiState.Loading
         viewModelScope.launch(Dispatchers.IO) {
             localRepository.wallets.collect {
-                withContext(Dispatchers.Main) {
+                val cryptoList = it.wallets.map { crypto -> crypto.crypto }.toSet()
+                val listOfPrice = arrayListOf<Double>()
+                for (elt in cryptoList) {
+                    val value = remoteRepository.getCoinsPrices(listOf(elt.name), listOf("usd"))
+                    val price = value[elt.name.lowercase()]?.get("usd") as? Double
+                    if (price != null) {
+                        listOfPrice.add(price)
+                    }
+                }
+                if (listOfPrice.size == cryptoList.size) {
+                    val newCryptoList = cryptoList.mapIndexed { index, elt ->
+                        elt.copy(currentPrice = listOfPrice[index])
+                    }
+                    val wallets = it.wallets.map { wallet ->
+                        wallet.copy(crypto = newCryptoList.first { it.name == wallet.crypto.name })
+                    }
+                    withContext(Dispatchers.Main) {
+                        uiState = HomeUiState.Success(WalletData(wallets))
+                    }
+                } else {
                     uiState = HomeUiState.Success(it)
                 }
             }
@@ -64,13 +83,14 @@ class HomeViewModel @Inject constructor(
     fun addNewWallet(completion: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val stat = remoteRepository.getBtcAddressStat(addWalletUiState.address)
-            val balance = stat.balance
+            val balance = stat.balance.toLong()
+            val adaptBalance = balance / 100000000.0
 
             val wallet = Wallet(
                 addWalletUiState.name,
                 addWalletUiState.address,
                 addWalletUiState.crypto,
-                balance.toDouble()
+                adaptBalance
             )
             localRepository.insertWallet(wallet)
             withContext(Dispatchers.Main) {

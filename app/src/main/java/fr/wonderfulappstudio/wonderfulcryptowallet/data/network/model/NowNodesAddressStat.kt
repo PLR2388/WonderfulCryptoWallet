@@ -14,5 +14,5 @@ data class NowNodesAddressStat(
     val unconfirmedBalance: String,
     val unconfirmedTxs: Int,
     val txs: Int,
-    val txids: List<String>
+    val txids: List<String> = listOf()
 )
