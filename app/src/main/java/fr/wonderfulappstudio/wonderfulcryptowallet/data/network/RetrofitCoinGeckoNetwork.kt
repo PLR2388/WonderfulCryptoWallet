@@ -15,7 +15,7 @@ private interface RetrofitCoinGeckoNetworkApi {
     suspend fun getCoinsPrices(
         @Query("ids") ids: String,
         @Query("vs_currencies") currencies: String
-    ): NetworkResponse<Map<String, Map<String, Double>>>
+    ): Map<String, Map<String, Double>>
 }
 
 private const val CoinGeckoPublicApiUrl = "https://api.coingecko.com/api/v3/"
@@ -43,6 +43,6 @@ class RetrofitCoinGeckoNetwork @Inject constructor(
         networkApi.getCoinsPrices(
             ids.joinToString(separator = ","),
             currencies.joinToString(separator = ",")
-        ).data
+        )
 
 }

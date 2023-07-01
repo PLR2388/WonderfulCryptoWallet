@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,15 +29,22 @@ class HomeViewModel @Inject constructor(
     private val remoteRepository: RemoteRepository
 ) : ViewModel() {
 
-    var uiState: HomeUiState = HomeUiState.Loading
+    var uiState: HomeUiState by mutableStateOf(HomeUiState.Loading)
 
     var addWalletUiState: AddWalletUiState by mutableStateOf(AddWalletUiState())
         private set
 
     init {
+        refresh()
+    }
+
+    fun refresh() {
+        uiState = HomeUiState.Loading
         viewModelScope.launch(Dispatchers.IO) {
             localRepository.wallets.collect {
-                uiState = HomeUiState.Success(it)
+                withContext(Dispatchers.Main) {
+                    uiState = HomeUiState.Success(it)
+                }
             }
         }
     }
@@ -64,7 +72,20 @@ class HomeViewModel @Inject constructor(
                 addWalletUiState.crypto,
                 balance.toDouble()
             )
-            localRepository
+            localRepository.insertWallet(wallet)
+            withContext(Dispatchers.Main) {
+                refresh()
+                completion()
+            }
+        }
+    }
+
+    fun removeWallet(wallet: Wallet) {
+        viewModelScope.launch(Dispatchers.IO) {
+            localRepository.deleteWallet(wallet)
+            withContext(Dispatchers.Main) {
+                refresh()
+            }
         }
     }
 

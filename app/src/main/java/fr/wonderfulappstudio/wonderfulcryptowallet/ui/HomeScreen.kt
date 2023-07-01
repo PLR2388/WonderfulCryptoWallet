@@ -1,8 +1,18 @@
 package fr.wonderfulappstudio.wonderfulcryptowallet.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,8 +25,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
+import androidx.compose.material3.DismissDirection
+import androidx.compose.material3.DismissValue
+import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -27,10 +42,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismiss
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberDismissState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,14 +56,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.onFocusEvent
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import fr.wonderfulappstudio.wonderfulcryptowallet.HomeUiState
 import fr.wonderfulappstudio.wonderfulcryptowallet.HomeViewModel
@@ -107,7 +127,13 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
                     })
                 Spacer(modifier = Modifier.size(smallSpacing))
                 Button(
-                    onClick = { /*TODO*/ },
+                    onClick = {
+                        viewModel.addNewWallet {
+                            coroutine.launch {
+                                scaffoldState.bottomSheetState.hide()
+                            }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(text = stringResource(R.string.add_wallet_button))
@@ -117,6 +143,9 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
         scaffoldState = scaffoldState,
         topBar = {
             WonderfulTopBarWithActions(title = stringResource(id = R.string.app_name)) {
+                RefreshIconAnimation(isPlaying = viewModel.uiState is HomeUiState.Loading) {
+                    viewModel.refresh()
+                }
                 IconButton(onClick = {
                     coroutine.launch {
                         scaffoldState.bottomSheetState.expand()
@@ -138,9 +167,58 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
 
                 is HomeUiState.Success -> {
                     items((viewModel.uiState as HomeUiState.Success).walletData.wallets) { wallet ->
-                        WalletRow(
-                            wallet = wallet
+
+                        val dismissState = rememberDismissState()
+
+                        if (dismissState.isDismissed(DismissDirection.EndToStart)) {
+
+                            viewModel.removeWallet(wallet)
+
+                        }
+                        SwipeToDismiss(
+                            state = dismissState,
+                            modifier = Modifier
+                                .padding(vertical = Dp(1f)),
+                            directions = setOf(
+                                DismissDirection.EndToStart
+                            ),
+                            background = {
+                                val color by animateColorAsState(
+                                    when (dismissState.targetValue) {
+                                        DismissValue.Default -> Color.White
+                                        else -> Color.Red
+                                    }
+                                )
+                                val alignment = Alignment.CenterEnd
+                                val icon = Icons.Default.Delete
+
+                                val scale by animateFloatAsState(
+                                    if (dismissState.targetValue == DismissValue.Default) 0.75f else 1f
+                                )
+
+                                Box(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(color)
+                                        .padding(horizontal = Dp(20f)),
+                                    contentAlignment = alignment
+                                ) {
+                                    Icon(
+                                        icon,
+                                        contentDescription = "Delete Icon",
+                                        modifier = Modifier.scale(scale)
+                                    )
+                                }
+                            },
+                            dismissContent = {
+                                    WalletRow(
+                                        wallet = wallet
+                                    )
+                            }
                         )
+
+                        Divider(Modifier.fillMaxWidth(), color = Color.DarkGray)
+
                     }
                 }
             }
@@ -245,6 +323,53 @@ fun CryptoDropDownMenu(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun RefreshIconAnimation(
+    modifier: Modifier = Modifier,
+    isPlaying: Boolean = false,
+    onClick: () -> Unit
+) {
+    // Allow resume on rotation
+    var currentRotation by remember { mutableStateOf(0f) }
+
+    val rotation = remember { Animatable(currentRotation) }
+
+    LaunchedEffect(isPlaying) {
+        if (isPlaying) {
+            // Infinite repeatable rotation when is playing
+            rotation.animateTo(
+                targetValue = currentRotation + 360f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                )
+            ) {
+                currentRotation = value
+            }
+        } else {
+            if (currentRotation > 0f) {
+                // Slow down rotation on pause
+                rotation.animateTo(
+                    targetValue = currentRotation + 50,
+                    animationSpec = tween(
+                        durationMillis = 1250,
+                        easing = LinearOutSlowInEasing
+                    )
+                ) {
+                    currentRotation = value
+                }
+            }
+        }
+    }
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = Icons.Default.Refresh,
+            contentDescription = null,
+            modifier = Modifier.rotate(rotation.value)
+        )
     }
 }
 

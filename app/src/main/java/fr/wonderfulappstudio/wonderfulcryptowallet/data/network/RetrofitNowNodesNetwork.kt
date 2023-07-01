@@ -16,11 +16,11 @@ import javax.inject.Singleton
 private const val BtcNowNodesUrl = "https://btcbook.nownodes.io/api/v2/"
 
 private interface RetrofitNowNodesNetworkApi {
-    @Headers("api-key : ${BuildConfig.NOW_NODES_API_KEY}")
+    @Headers("api-key:${BuildConfig.NOW_NODES_API_KEY}")
     @GET(value = "address/{address}")
     suspend fun getBtcAddressStat(
         @Path("address") address: String,
-    ): NetworkResponse<NowNodesAddressStat>
+    ): NowNodesAddressStat
 }
 
 @Singleton
@@ -38,5 +38,5 @@ class RetrofitNowNodesNetwork @Inject constructor(
         .create(RetrofitNowNodesNetworkApi::class.java)
 
     suspend fun getAddressStat(address: String): NowNodesAddressStat =
-        networkApi.getBtcAddressStat(address).data
+        networkApi.getBtcAddressStat(address)
 }
