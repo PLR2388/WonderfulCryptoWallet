@@ -16,4 +16,14 @@ class LocalDataSource @Inject constructor(
         emit(WalletData(wallets))
     }
 
+    fun insertWallet(wallet: Wallet) {
+        val roomWallet = wallet.toRoomWallet()
+        appDatabase.walletDao().insert(roomWallet)
+    }
+
+    fun deleteWallet(wallet: Wallet) {
+        val roomWallet = wallet.toRoomWallet()
+        appDatabase.walletDao().delete(roomWallet)
+    }
+
 }

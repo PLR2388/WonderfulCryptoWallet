@@ -10,6 +10,10 @@ android {
     namespace 'fr.wonderfulappstudio.wonderfulcryptowallet'
     compileSdk 33
 
+    def secretPropertiesFile = rootProject.file("secrets.properties")
+    def secretProperties = new Properties()
+    secretProperties.load(new FileInputStream(secretPropertiesFile))
+
     defaultConfig {
         applicationId "fr.wonderfulappstudio.wonderfulcryptowallet"
         minSdk 31
@@ -21,6 +25,8 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
+
+        buildConfigField("String", "NOW_NODES_API_KEY", secretProperties["NOW_NODES_API_KEY"])
     }
 
     buildTypes {
@@ -37,6 +43,7 @@ android {
         jvmTarget = '17'
     }
     buildFeatures {
+        buildConfig true
         compose true
     }
     composeOptions {

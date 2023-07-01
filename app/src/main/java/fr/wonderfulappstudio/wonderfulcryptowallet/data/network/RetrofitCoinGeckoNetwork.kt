@@ -1,7 +1,6 @@
 package fr.wonderfulappstudio.wonderfulcryptowallet.data.network
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.Call
 import okhttp3.MediaType
@@ -21,16 +20,11 @@ private interface RetrofitCoinGeckoNetworkApi {
 
 private const val CoinGeckoPublicApiUrl = "https://api.coingecko.com/api/v3/"
 
-@Serializable
-private data class NetworkResponse<T>(
-    val data: T,
-)
-
 @Singleton
 class RetrofitCoinGeckoNetwork @Inject constructor(
     networkJson: Json,
     okhttpCallFactory: Call.Factory,
-) : NetworkDataSource {
+) {
 
     private val networkApi = Retrofit.Builder()
         .baseUrl(CoinGeckoPublicApiUrl)
@@ -42,7 +36,7 @@ class RetrofitCoinGeckoNetwork @Inject constructor(
         .create(RetrofitCoinGeckoNetworkApi::class.java)
 
 
-    override suspend fun getCoinsPrices(
+    suspend fun getCoinsPrices(
         ids: List<String>,
         currencies: List<String>
     ): Map<String, Map<String, Double>> =

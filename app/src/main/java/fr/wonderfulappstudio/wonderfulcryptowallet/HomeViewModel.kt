@@ -11,6 +11,7 @@ import fr.wonderfulappstudio.wonderfulcryptowallet.data.repository.RemoteReposit
 import fr.wonderfulappstudio.wonderfulcryptowallet.model.WalletData
 import fr.wonderfulappstudio.wonderfulcryptowallet.ui.AddWalletUiState
 import fr.wonderfulappstudio.wonderfulcryptowallet.ui.Crypto
+import fr.wonderfulappstudio.wonderfulcryptowallet.ui.model.Wallet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -23,8 +24,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    localRepository: LocalRepository,
-    remoteRepository: RemoteRepository
+    private val localRepository: LocalRepository,
+    private val remoteRepository: RemoteRepository
 ) : ViewModel() {
 
     var uiState: HomeUiState = HomeUiState.Loading
@@ -52,6 +53,20 @@ class HomeViewModel @Inject constructor(
         addWalletUiState = addWalletUiState.copy(name = value)
     }
 
+    fun addNewWallet(completion: () -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val stat = remoteRepository.getBtcAddressStat(addWalletUiState.address)
+            val balance = stat.balance
+
+            val wallet = Wallet(
+                addWalletUiState.name,
+                addWalletUiState.address,
+                addWalletUiState.crypto,
+                balance.toDouble()
+            )
+            localRepository
+        }
+    }
 
 }
 
