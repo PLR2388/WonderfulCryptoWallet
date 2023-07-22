@@ -1,18 +1,48 @@
 package fr.wonderfulappstudio.wonderfulcryptowallet.data.repository
 
-import fr.wonderfulappstudio.wonderfulcryptowallet.data.network.RetrofitCoinGeckoNetwork
-import fr.wonderfulappstudio.wonderfulcryptowallet.data.network.RetrofitNowNodesNetwork
-import fr.wonderfulappstudio.wonderfulcryptowallet.data.network.model.NowNodesAddressStat
+import fr.wonderfulappstudio.wonderfulcryptowallet.data.local.LocalDataSource
+import fr.wonderfulappstudio.wonderfulcryptowallet.data.network.datasource.RemoteDataSource
+import fr.wonderfulappstudio.wonderfulcryptowallet.ui.Crypto
 import javax.inject.Inject
 
 class RemoteRepository @Inject constructor(
-    private val coinGeckoNetwork: RetrofitCoinGeckoNetwork,
-    private val nowNodesNetwork: RetrofitNowNodesNetwork
+    private val remoteDataSource: RemoteDataSource,
+    private val localDataSource: LocalDataSource
 ) {
-    suspend fun getCoinsPrices(
-        ids: List<String>,
-        currencies: List<String>
-    ): Map<String, Map<String, Double>> = coinGeckoNetwork.getCoinsPrices(ids, currencies)
 
-    suspend fun getBtcAddressStat(address: String): NowNodesAddressStat = nowNodesNetwork.getAddressStat(address)
+    suspend fun fetchAndUpdateData() {
+        val wallets = localDataSource.getAllWallets()
+        val cryptoList =
+            wallets.map { wallet -> wallet.crypto }.toSet().map { elt ->
+                val value = remoteDataSource.getUSDPrice(elt.name)
+                if (value == null) {
+                    elt
+                } else {
+                    elt.copy(currentPrice = value)
+                }
+            }
+
+        val updateWallets = wallets.map {
+            val balance = when (it.crypto.symbol) {
+                "BTC" -> remoteDataSource.getBitcoinBalance(it.address)
+                else -> null
+            }
+            if (balance != null) {
+                it.copy(balance = balance)
+            } else {
+                it
+            }
+        }.map { wallet ->
+            wallet.copy(crypto = cryptoList.first { it.name == wallet.crypto.name})
+        }
+
+        localDataSource.updateAllWallets(updateWallets)
+    }
+
+    suspend fun getBalance(address: String, crypto: Crypto): Double? {
+        return when (crypto.symbol) {
+            "BTC" -> remoteDataSource.getBitcoinBalance(address)
+            else -> null
+        }
+    }
 }

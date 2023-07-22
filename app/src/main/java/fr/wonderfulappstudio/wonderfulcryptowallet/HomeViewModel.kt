@@ -8,17 +8,10 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.wonderfulappstudio.wonderfulcryptowallet.data.repository.LocalRepository
 import fr.wonderfulappstudio.wonderfulcryptowallet.data.repository.RemoteRepository
-import fr.wonderfulappstudio.wonderfulcryptowallet.model.WalletData
 import fr.wonderfulappstudio.wonderfulcryptowallet.ui.AddWalletUiState
 import fr.wonderfulappstudio.wonderfulcryptowallet.ui.Crypto
 import fr.wonderfulappstudio.wonderfulcryptowallet.ui.model.Wallet
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -39,32 +32,11 @@ class HomeViewModel @Inject constructor(
     }
 
     fun refresh() {
-        uiState = HomeUiState.Loading
-        viewModelScope.launch(Dispatchers.IO) {
-            localRepository.wallets.collect {
-                val cryptoList = it.wallets.map { crypto -> crypto.crypto }.toSet()
-                val listOfPrice = arrayListOf<Double>()
-                for (elt in cryptoList) {
-                    val value = remoteRepository.getCoinsPrices(listOf(elt.name), listOf("usd"))
-                    val price = value[elt.name.lowercase()]?.get("usd") as? Double
-                    if (price != null) {
-                        listOfPrice.add(price)
-                    }
-                }
-                if (listOfPrice.size == cryptoList.size) {
-                    val newCryptoList = cryptoList.mapIndexed { index, elt ->
-                        elt.copy(currentPrice = listOfPrice[index])
-                    }
-                    val wallets = it.wallets.map { wallet ->
-                        wallet.copy(crypto = newCryptoList.first { it.name == wallet.crypto.name })
-                    }
-                    withContext(Dispatchers.Main) {
-                        uiState = HomeUiState.Success(WalletData(wallets))
-                    }
-                } else {
-                    uiState = HomeUiState.Success(it)
-                }
-            }
+        viewModelScope.launch {
+            uiState = HomeUiState.Loading
+            remoteRepository.fetchAndUpdateData()
+            val wallets = localRepository.getAllWallets()
+            uiState = HomeUiState.Success(wallets)
         }
     }
 
@@ -81,16 +53,14 @@ class HomeViewModel @Inject constructor(
     }
 
     fun addNewWallet(completion: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val stat = remoteRepository.getBtcAddressStat(addWalletUiState.address)
-            val balance = stat.balance.toLong()
-            val adaptBalance = balance / 100000000.0
+        viewModelScope.launch {
+            val balance = remoteRepository.getBalance(addWalletUiState.address, addWalletUiState.crypto)
 
             val wallet = Wallet(
                 addWalletUiState.name,
                 addWalletUiState.address,
                 addWalletUiState.crypto,
-                adaptBalance
+                balance ?: 0.0
             )
             localRepository.insertWallet(wallet)
             withContext(Dispatchers.Main) {
@@ -114,5 +84,5 @@ class HomeViewModel @Inject constructor(
 sealed interface HomeUiState {
     object Loading : HomeUiState
 
-    data class Success(val walletData: WalletData) : HomeUiState
+    data class Success(val walletData: List<Wallet>) : HomeUiState
 }

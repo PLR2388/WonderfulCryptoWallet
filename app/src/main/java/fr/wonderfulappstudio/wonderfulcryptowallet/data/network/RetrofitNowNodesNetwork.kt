@@ -3,6 +3,8 @@ package fr.wonderfulappstudio.wonderfulcryptowallet.data.network
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import fr.wonderfulappstudio.wonderfulcryptowallet.BuildConfig
 import fr.wonderfulappstudio.wonderfulcryptowallet.data.network.model.NowNodesAddressStat
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.Call
 import okhttp3.MediaType
@@ -37,6 +39,9 @@ class RetrofitNowNodesNetwork @Inject constructor(
         .build()
         .create(RetrofitNowNodesNetworkApi::class.java)
 
-    suspend fun getAddressStat(address: String): NowNodesAddressStat =
-        networkApi.getBtcAddressStat(address)
+    suspend fun getAddressStat(address: String): NowNodesAddressStat {
+        return withContext(Dispatchers.IO) {
+            networkApi.getBtcAddressStat(address)
+        }
+    }
 }

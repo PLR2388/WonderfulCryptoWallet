@@ -6,6 +6,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import fr.wonderfulappstudio.wonderfulcryptowallet.data.network.RetrofitCoinGeckoNetwork
 import fr.wonderfulappstudio.wonderfulcryptowallet.data.network.RetrofitNowNodesNetwork
+import fr.wonderfulappstudio.wonderfulcryptowallet.data.network.datasource.RemoteDataSource
 import fr.wonderfulappstudio.wonderfulcryptowallet.data.repository.RemoteRepository
 import kotlinx.serialization.json.Json
 import okhttp3.Call
@@ -40,8 +41,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun providesRemoteRepository(): RemoteRepository = RemoteRepository(
-        providesCoinGeckoNetworkDatasource(),
-        providesNowNodesNetworkDatasource()
+    fun providesRemoteDataSource(): RemoteDataSource = RemoteDataSource(
+        providesCoinGeckoNetworkDatasource(), providesNowNodesNetworkDatasource()
     )
 }

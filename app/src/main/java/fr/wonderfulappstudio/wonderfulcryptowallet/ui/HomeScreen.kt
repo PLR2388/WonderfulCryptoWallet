@@ -166,7 +166,7 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
                 }
 
                 is HomeUiState.Success -> {
-                    items((viewModel.uiState as HomeUiState.Success).walletData.wallets) { wallet ->
+                    items((viewModel.uiState as HomeUiState.Success).walletData) { wallet ->
 
                         val dismissState = rememberDismissState()
 

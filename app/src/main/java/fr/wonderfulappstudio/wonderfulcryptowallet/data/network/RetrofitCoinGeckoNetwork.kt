@@ -1,6 +1,8 @@
 package fr.wonderfulappstudio.wonderfulcryptowallet.data.network
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.Call
 import okhttp3.MediaType
@@ -39,10 +41,13 @@ class RetrofitCoinGeckoNetwork @Inject constructor(
     suspend fun getCoinsPrices(
         ids: List<String>,
         currencies: List<String>
-    ): Map<String, Map<String, Double>> =
-        networkApi.getCoinsPrices(
-            ids.joinToString(separator = ","),
-            currencies.joinToString(separator = ",")
-        )
+    ): Map<String, Map<String, Double>> {
+        return withContext(Dispatchers.IO) {
+            networkApi.getCoinsPrices(
+                ids.joinToString(separator = ","),
+                currencies.joinToString(separator = ",")
+            )
+        }
+    }
 
 }

@@ -2,6 +2,7 @@ package fr.wonderfulappstudio.wonderfulcryptowallet.ui
 
 import androidx.annotation.DrawableRes
 import fr.wonderfulappstudio.wonderfulcryptowallet.R
+import fr.wonderfulappstudio.wonderfulcryptowallet.data.local.RoomCrypto
 
 data class Crypto(
     val name: String,
@@ -18,5 +19,12 @@ data class Crypto(
         )
 
         val supportedCrypto: List<Crypto> = listOf(bitcoin)
+    }
+
+    fun toRoomCrypto(): RoomCrypto {
+        return RoomCrypto(
+            symbol,
+            currentPrice
+        )
     }
 }
