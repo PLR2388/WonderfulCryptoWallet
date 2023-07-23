@@ -23,10 +23,7 @@ class RemoteRepository @Inject constructor(
             }
 
         val updateWallets = wallets.map {
-            val balance = when (it.crypto.symbol) {
-                "BTC" -> remoteDataSource.getBitcoinBalance(it.address)
-                else -> null
-            }
+            val balance = getBalance(it.address, it.crypto)
             if (balance != null) {
                 it.copy(balance = balance)
             } else {

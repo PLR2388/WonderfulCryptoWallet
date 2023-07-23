@@ -54,13 +54,11 @@ class HomeViewModel @Inject constructor(
 
     fun addNewWallet(completion: () -> Unit) {
         viewModelScope.launch {
-            val balance = remoteRepository.getBalance(addWalletUiState.address, addWalletUiState.crypto)
-
             val wallet = Wallet(
                 addWalletUiState.name,
                 addWalletUiState.address,
                 addWalletUiState.crypto,
-                balance ?: 0.0
+                0.0
             )
             localRepository.insertWallet(wallet)
             withContext(Dispatchers.Main) {
